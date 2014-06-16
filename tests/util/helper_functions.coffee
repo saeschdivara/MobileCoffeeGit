@@ -13,6 +13,13 @@ describe('Helper Functions', () ->
         ## VARIABLES ##
         ###############
 
+        short_way_object = {}
+        named_object = new Object()
+        number = 212
+        a_function = () ->
+        a_string = 'sfafads'
+        an_array = []
+        a_named_array = new Array()
 
         #######################
         ## TEST PREPARATIONS ##
@@ -22,5 +29,16 @@ describe('Helper Functions', () ->
         ################
         ## TEST START ##
         ################
+
+        # These should be objects
+        expect( isObject(short_way_object) ).toBe(true)
+        expect( isObject(named_object) ).toBe(true)
+
+        # These should not be
+        expect( isObject(number) ).toBe(false)
+        expect( isObject(a_function) ).toBe(false)
+        expect( isObject(a_string) ).toBe(false)
+        expect( isObject(an_array) ).toBe(false)
+        expect( isObject(a_named_array) ).toBe(false)
     )
 )
