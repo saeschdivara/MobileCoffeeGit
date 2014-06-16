@@ -30,7 +30,7 @@ class ConfigFile
         #
 
 
-    save: () ->
+    toBytes: () ->
         ###
         ###
 
