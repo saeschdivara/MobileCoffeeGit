@@ -4,12 +4,13 @@ module.exports = (grunt) ->
         pkg: grunt.file.readJSON('package.json')
 
         coffee:
-            presentation_compile:
+            git_compile:
                 options:
                     sourceMap: true
 
                 files:
-                    '': [
+                    'dist/git.js': [
+                        'src/**/*.coffee'
                     ]
 
 
@@ -25,7 +26,8 @@ module.exports = (grunt) ->
     grunt.loadNpmTasks('grunt-contrib-coffee')
     grunt.loadNpmTasks('grunt-karma')
 
-    grunt.registerTask('build:all', ['karma'])
+    grunt.registerTask('build:git', ['coffee:git_compile'])
+    grunt.registerTask('build:all', ['karma', 'build:git'])
 
     # DEFAULT
     grunt.registerTask('default', ['karma'])
