@@ -1,0 +1,5 @@
+isObject = () ->
+    ###
+    ###
+
+    return false
