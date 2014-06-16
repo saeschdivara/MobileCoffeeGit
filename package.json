@@ -12,5 +12,12 @@
     "js"
   ],
   "author": "Sascha Häusler",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-coffee": "^0.10.1",
+    "grunt-karma": "^0.8.3",
+    "karma": "^0.12.16",
+    "time-grunt": "^0.3.2"
+  }
 }
