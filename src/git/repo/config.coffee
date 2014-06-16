@@ -21,6 +21,22 @@ class ConfigFile
         ###
 
 
+    set: (key, value) ->
+        ###
+            :param key {String|Object}
+            :param value {String}
+        ###
+
+        #
+
+
+    save: () ->
+        ###
+        ###
+
+        #
+
+
     #####################
     ## PRIVATE METHODS ##
     #####################
