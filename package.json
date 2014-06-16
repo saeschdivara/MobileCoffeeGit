@@ -18,6 +18,7 @@
     "grunt-contrib-coffee": "^0.10.1",
     "grunt-karma": "^0.8.3",
     "karma": "^0.12.16",
+    "karma-jasmine": "^0.2.2",
     "time-grunt": "^0.3.2"
   }
 }
