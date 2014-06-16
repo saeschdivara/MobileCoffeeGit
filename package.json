@@ -1,0 +1,16 @@
+{
+  "name": "MobileCoffeeGit",
+  "version": "0.0.1",
+  "description": "Git implementation in coffeescript",
+  "main": "dist/git.js",
+  "scripts": {
+    "test": "grunt run:tests"
+  },
+  "keywords": [
+    "coffee",
+    "git",
+    "js"
+  ],
+  "author": "Sascha Häusler",
+  "license": "MIT"
+}
