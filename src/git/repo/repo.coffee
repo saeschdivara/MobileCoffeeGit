@@ -4,7 +4,7 @@ class BaseRepository
     ## PRIVATE PROPERTIES ##
     ########################
 
-    _graphpoints
+    _graphpoints: null
 
 
     #######################
