@@ -395,7 +395,7 @@ class BaseRepository
         ###
 
         config = @get_config_stack()
-        return "%s <%s>".format(config.get(["user", ], "name"), config.get(["user", ] "email"))
+        return "%s <%s>".format(config.get(["user", ], "name"), config.get(["user", ], "email"))
 
     _add_graftpoints: (updated_graftpoints) ->
         ###
@@ -544,3 +544,300 @@ class BaseRepository
         catch err
 
         return c.id
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Repo extends BaseRepository
+    ###
+        A git repository backed by local disk.
+
+        To open an existing repository, call the contructor with
+        the path of the repository.
+
+        To create a new repository, use the Repo.init class method.
+    ###
+
+    constructor: (root) ->
+        if os.path.isdir(os.path.join(root, ".git", PATHS.OBJECTS))
+            @bare = false
+            @_controldir = os.path.join(root, ".git")
+        else if (os.path.isdir(os.path.join(root, OBJECTDIR)) and
+              os.path.isdir(os.path.join(root, REFSDIR)))
+            @bare = True
+            @_controldir = root
+        else if (os.path.isfile(os.path.join(root, ".git")))
+            # import re
+            f = open(os.path.join(root, ".git"), 'r')
+            try
+#                _, path = re.match('(gitdir: )(.+$)', f.read()).groups()
+            finally
+                f.close()
+            @bare = False
+            @_controldir = os.path.join(root, path)
+        else
+            throw Error('''
+            raise NotGitRepository(
+                "No git repository was found at %(path)s" % dict(path=root)
+            ) ''')
+
+        @path = root
+        object_store = DiskObjectStore(os.path.join(@controldir(),
+                                                    OBJECTDIR))
+        refs = DiskRefsContainer(@controldir())
+        super(object_store, refs)
+
+        @_graftpoints = new Object()
+        graft_file = @get_named_file(os.path.join("info", "grafts"))
+        if graft_file
+            @_graftpoints.update(parse_graftpoints(graft_file))
+        graft_file = @get_named_file("shallow")
+        if graft_file
+            @_graftpoints.update(parse_graftpoints(graft_file))
+
+        @hooks['pre-commit'] = PreCommitShellHook(@controldir())
+        @hooks['commit-msg'] = CommitMsgShellHook(@controldir())
+        @hooks['post-commit'] = PostCommitShellHook(@controldir())
+
+    controldir: () ->
+        ### Return the path of the control directory.###
+        return @_controldir
+
+    _put_named_file: (path, contents) ->
+        ###
+            Write a file to the control dir with the given name and contents.
+
+            :param path: The path to the file, relative to the control dir.
+            :param contents: A string to write to the file.
+        ###
+
+        path = path.lstrip(os.path.sep)
+        f = GitFile(os.path.join(self.controldir(), path), 'wb')
+        try
+            f.write(contents)
+        finally
+            f.close()
+
+    get_named_file: (path) ->
+        ###
+            Get a file from the control dir with a specific name.
+
+            Although the filename should be interpreted as a filename relative to
+            the control dir in a disk-based Repo, the object returned need not be
+            pointing to a file in that location.
+
+            :param path: The path to the file, relative to the control dir.
+            :return: An open file object, or None if the file does not exist.
+        ###
+
+        # TODO(dborowitz): sanitize filenames, since this is used directly by
+        # the dumb web serving code.
+        path = path.lstrip(os.path.sep)
+        try
+            return open(os.path.join(self.controldir(), path), 'rb')
+        catch e
+            if e.errno == errno.ENOENT
+                return null
+#            raise
+
+    index_path: () ->
+        ### Return path to the index file. ###
+        return os.path.join(@controldir(), INDEX_FILENAME)
+
+    open_index: () ->
+        ###
+            Open the index for this repository.
+
+            :raise NoIndexPresent: If no index is present
+            :return: The matching `Index`
+        ###
+
+        #from dulwich.index import Index
+
+        if not @has_index()
+            throw Error('NoIndexPresent()')
+        return Index(@index_path())
+
+    has_index: () ->
+        ### Check if an index is present. ###
+        # Bare repos must never have index files; non-bare repos may have a
+        # missing index file, which is treated as empty.
+        return not @bare
+
+
+    stage: (paths) ->
+        ###
+            Stage a set of paths.
+
+            :param paths: List of paths, relative to the repository path
+        ###
+        if isinstance(paths, basestring)
+            paths = [paths]
+#        from dulwich.index import (
+#            blob_from_path_and_stat,
+#            index_entry_from_stat,
+#            )
+        index = @open_index()
+        for path in paths
+            full_path = os.path.join(self.path, path)
+            try
+                st = os.lstat(full_path)
+            catch err
+                # File no longer exists
+                try
+                    del index[path]
+                catch key_err
+                    pass  # already removed
+            finally
+                blob = blob_from_path_and_stat(full_path, st)
+                @object_store.add_object(blob)
+                index[path] = index_entry_from_stat(st, blob.id, 0)
+        index.write()
+
+    clone: (target_path, mkdir=True, bare=False, origin="origin") ->
+        ###
+            Clone this repository.
+
+            :param target_path: Target path
+            :param mkdir: Create the target directory
+            :param bare: Whether to create a bare repository
+            :param origin: Base name for refs in target repository
+                cloned from this repository
+            :return: Created repository as `Repo`
+        ###
+
+        if not bare
+            target = @init(target_path, mkdir=mkdir)
+        else
+            target = @init_bare(target_path)
+
+        @fetch(target)
+        target.refs.import_refs('refs/remotes/' + origin, self.refs.as_dict('refs/heads'))
+        target.refs.import_refs('refs/tags', @refs.as_dict('refs/tags'))
+
+        try
+            target.refs.add_if_new('refs/heads/master', @refs['refs/heads/master'])
+        catch err
+            pass
+
+        # Update target head
+#        head, head_sha = self.refs._follow('HEAD')
+        head = null
+        head_sha = @refs._follow('HEAD')
+        if head? and head_sha?
+            target.refs.set_symbolic_ref('HEAD', head)
+            target['HEAD'] = head_sha
+
+            if not bare
+                # Checkout HEAD to target dir
+                target._build_tree()
+
+        return target
+
+    _build_tree: () ->
+#        from dulwich.index import build_index_from_tree
+        config = self.get_config()
+        honor_filemode = config.get_boolean('core', 'filemode', os.name != "nt")
+        return build_index_from_tree(@path, @index_path(), @object_store, @['HEAD'].tree, honor_filemode=honor_filemode)
+
+    get_config: () ->
+        ###
+            Retrieve the config object.
+
+            :return: `ConfigFile` object for the ``.git/config`` file.
+        ###
+#        from dulwich.config import ConfigFile
+        path = os.path.join(@_controldir, 'config')
+        try
+            return ConfigFile.from_path(path)
+        catch e
+            if e.errno != errno.ENOENT
+                raise
+            ret = ConfigFile()
+            ret.path = path
+            return ret
+
+    get_description: () ->
+        ###
+            Retrieve the description of this repository.
+
+            :return: A string describing the repository or None.
+        ###
+        path = os.path.join(self._controldir, 'description')
+        try
+            f = GitFile(path, 'rb')
+            try
+                return f.read()
+            finally
+                f.close()
+        catch e
+            if e.errno != errno.ENOENT
+                throw Error('')
+            return null
+
+    __repr__: () ->
+        return "<Repo at %r>".format(@path)
+
+    set_description: (description) ->
+        ###
+            Set the description for this repository.
+
+            :param description: Text to set as description for this repository.
+        ###
+
+        path = os.path.join(@_controldir, 'description')
+        f = open(path, 'w')
+        try
+            f.write(description)
+        finally
+            f.close()
+
+    @_init_maybe_bare: (path, bare) ->
+        for d in BASE_DIRECTORIES
+            os.mkdir(os.path.join(path, d))
+        DiskObjectStore.init(os.path.join(path, OBJECTDIR))
+        ret = new Repo(path)
+        ret.refs.set_symbolic_ref("HEAD", "refs/heads/master")
+        ret._init_files(bare)
+
+        return ret
+
+    @init: (path, mkdir=False) ->
+        ###
+            Create a new repository.
+
+            :param path: Path in which to create the repository
+            :param mkdir: Whether to create the directory
+            :return: `Repo` instance
+        ###
+
+        if mkdir
+            os.mkdir(path)
+        controldir = os.path.join(path, ".git")
+        os.mkdir(controldir)
+        Repo._init_maybe_bare(controldir, false)
+
+        return new Repo(path)
+
+    @init_bare: (path) ->
+        ###
+            Create a new bare repository.
+
+            ``path`` should already exist and be an emty directory.
+
+            :param path: Path to create bare repository in
+            :return: a `Repo` instance
+        ###
+
+        return Repo._init_maybe_bare(path, true)
+
+    @create: Repo.init_bare
