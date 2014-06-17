@@ -33,12 +33,12 @@ describe('Helper Functions', () ->
         # These should be objects
         expect( isObject(short_way_object) ).toBe(true)
         expect( isObject(named_object) ).toBe(true)
+        expect( isObject(a_named_array) ).toBe(true)
+        expect( isObject(an_array) ).toBe(true)
 
         # These should not be
         expect( isObject(number) ).toBe(false)
         expect( isObject(a_function) ).toBe(false)
         expect( isObject(a_string) ).toBe(false)
-        expect( isObject(an_array) ).toBe(false)
-        expect( isObject(a_named_array) ).toBe(false)
     )
 )

@@ -1,8 +1,8 @@
-isObject = () ->
+isObject = (variable) ->
     ###
     ###
 
-    return false
+    return variable? && typeof(variable) is 'object'
 
 isString = () ->
     ###
