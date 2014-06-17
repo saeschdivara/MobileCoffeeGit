@@ -745,7 +745,7 @@ class Repo extends BaseRepository
 
     _build_tree: () ->
 #        from dulwich.index import build_index_from_tree
-        config = self.get_config()
+        config = @get_config()
         honor_filemode = config.get_boolean('core', 'filemode', os.name != "nt")
         return build_index_from_tree(@path, @index_path(), @object_store, @['HEAD'].tree, honor_filemode=honor_filemode)
 
@@ -841,3 +841,86 @@ class Repo extends BaseRepository
         return Repo._init_maybe_bare(path, true)
 
     @create: Repo.init_bare
+
+
+class MemoryRepo extends BaseRepository
+    ###
+        Repo that stores refs, objects, and named files in memory.
+
+        MemoryRepos are always bare: they have no working tree and no index, since
+        those have a stronger dependency on the filesystem.
+    ###
+
+    constructor:() ->
+#        from dulwich.config import ConfigFile
+        super(MemoryObjectStore(), DictRefsContainer(new Object()))
+        @_named_files = new Object()
+        @bare = true
+        @_config = new ConfigFile()
+
+    _put_named_file: (path, contents) ->
+        ###
+            Write a file to the control dir with the given name and contents.
+
+            :param path: The path to the file, relative to the control dir.
+            :param contents: A string to write to the file.
+        ###
+
+        @_named_files[path] = contents
+
+    get_named_file: (path) ->
+        ###
+            Get a file from the control dir with a specific name.
+
+            Although the filename should be interpreted as a filename relative to
+            the control dir in a disk-baked Repo, the object returned need not be
+            pointing to a file in that location.
+
+            :param path: The path to the file, relative to the control dir.
+            :return: An open file object, or None if the file does not exist.
+        ###
+
+        contents = @_named_files.get(path, null)
+        if contents is null
+            return null
+        return new BytesIO(contents)
+
+    open_index: () ->
+        ###
+            Fail to open index for this repo, since it is bare.
+
+            :raise NoIndexPresent: Raised when no index is present
+        ###
+        throw Error('NoIndexPresent()')
+
+    get_config: () ->
+        ###
+            Retrieve the config object.
+
+            :return: `ConfigFile` object.
+        ###
+        return @_config
+
+    get_description: () ->
+        ###
+            Retrieve the repository description.
+
+            This defaults to None, for no description.
+        ###
+        return None
+
+    @init_bare: (objects, refs) ->
+        """Create a new bare repository in memory.
+
+        :param objects: Objects for the new repository,
+            as iterable
+        :param refs: Refs as dictionary, mapping names
+            to object SHA1s
+        """
+        ret = new MemoryRepo()
+        for obj in objects
+            ret.object_store.add_object(obj)
+        for refname, sha in refs.iteritems()
+            ret.refs[refname] = sha
+        ret._init_files(bare=True)
+        return ret
