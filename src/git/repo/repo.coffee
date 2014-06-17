@@ -64,7 +64,7 @@ class BaseRepository
             determine_wants = target.object_store.determine_wants_all
 
         target.object_store.addObjects(
-          self.fetchObjects(determine_wants, target.graphWalker(), progress)
+          @fetchObjects(determine_wants, target.graphWalker(), progress)
         )
 
         return @getReferences()
@@ -83,30 +83,6 @@ class BaseRepository
         ###
 
         throw Error("NotImplementedError(self.getFileByName)")
-
-
-    #####################
-    ## PRIVATE METHODS ##
-    #####################
-
-    _createFileByName: (path, contents) ->
-        ###
-            Write a file to the control dir with the given name and contents.
-
-            :param path: The path to the file, relative to the control dir.
-            :param contents: A string to write to the file.
-        ###
-
-        throw Error("NotImplementedError(self._createFileByName)")
-
-
-
-
-
-
-
-
-
 
 
     fetchObjects: (determine_wants, graph_walker, progress, get_tagged=None) ->
@@ -161,6 +137,7 @@ class BaseRepository
               get_tagged,
               get_parents=get_parents))
 
+
     get_graph_walker: (heads=null) ->
         ###
             Retrieve a graph walker.
@@ -176,6 +153,7 @@ class BaseRepository
 
         return ObjectStoreGraphWalker(heads, self.get_parents)
 
+
     get_refs: () ->
         ###
             Get dictionary with all refs.
@@ -184,25 +162,11 @@ class BaseRepository
         ###
         return @refs.as_dict()
 
+
     head: () ->
         ###Return the SHA1 pointed at by HEAD.###
         return @refs['HEAD']
 
-    _get_object: (sha, cls) ->
-        assert len(sha) in [20, 40]
-        ret = self.get_object(sha)
-        if not isinstance(ret, cls)
-            if cls is Commit
-                throw Error(" NotCommitError(ret) ")
-            else if cls is Blob
-                throw Error(" NotBlobError(ret) ")
-            else if cls is Tree
-                throw Error(" NotTreeError(ret) ")
-            else if cls is Tag
-                throw Error(" NotTagError(ret) ")
-            else
-                throw Error(' Exception("Type invalid: %r != %r" % ( ret.type_name, cls.type_name))')
-        return ret
 
     get_object: (sha) ->
         ###
@@ -213,6 +177,7 @@ class BaseRepository
             :raise KeyError: when the object can not be found
         ###
         return @object_store[sha]
+
 
     get_parents: (sha, commit=null) ->
         ###
@@ -227,11 +192,12 @@ class BaseRepository
         ###
 
         try
-            return self._graftpoints[sha]
+            return @_graftpoints[sha]
         catch err
             if commit is null
                 commit = @[sha]
             return commit.parents
+
 
     get_config: () ->
         ###
@@ -240,6 +206,7 @@ class BaseRepository
             :return: `ConfigFile` object for the ``.git/config`` file.
         ###
         throw Error('raise NotImplementedError(self.get_config)')
+
 
     get_description: () ->
         ###
@@ -251,6 +218,7 @@ class BaseRepository
 
         throw Error('raise NotImplementedError(self.get_description)')
 
+
     set_description: (description) ->
         ###
             Set the description for this repository.
@@ -259,6 +227,7 @@ class BaseRepository
         ###
 
         throw Error('raise NotImplementedError(self.set_description)')
+
 
     get_config_stack: () ->
         ###
@@ -275,6 +244,7 @@ class BaseRepository
         backends = [@get_config()] + StackedConfig.default_backends()
         return StackedConfig(backends, writable=backends[0])
 
+
     get_peeled: (ref) ->
         ###
             Get the peeled value of a ref.
@@ -288,6 +258,7 @@ class BaseRepository
         if not cached is null
             return cached
         return @object_store.peel_sha(@refs[ref]).id
+
 
     get_walker: (include=null, args, kwargs) ->
         ###
@@ -325,100 +296,6 @@ class BaseRepository
         kwargs['get_parents'] = (commit) -> @get_parents(commit.id, commit)
 
         return Walker(@object_store, include, args, kwargs)
-
-    __getitem__: (name) ->
-        ###
-            Retrieve a Git object by SHA1 or ref.
-
-            :param name: A Git object SHA1 or a ref name
-            :return: A `ShaFile` object, such as a Commit or Blob
-            :raise KeyError: when the specified ref or object does not exist
-        ###
-        if not isinstance(name, str)
-            throw Error('raise TypeError("name must be bytestring, not %.80s" % type(name).__name__)')
-
-        if len(name) in [20, 40]
-            try
-                return self.object_store[name]
-            catch err
-                pass
-        try
-            return @object_store[@refs[name]]
-        catch err
-            throw Error('raise KeyError(name)')
-
-    __contains__: (name) ->
-        ###
-            Check if a specific Git object or ref is present.
-
-            :param name: Git object SHA1 or ref name
-        ###
-
-        if len(name) in [20, 40]
-            return name in @object_store or name in @refs
-        else
-            return name in @refs
-
-    __setitem__: (name, value) ->
-        ###
-            Set a ref.
-
-            :param name: ref name
-            :param value: Ref value - either a ShaFile object, or a hex sha
-        ###
-
-        if name.startswith("refs/") or name == "HEAD"
-            if isinstance(value, ShaFile)
-                @refs[name] = value.id
-            else if isinstance(value, str)
-                @refs[name] = value
-            else
-                throw Error('raise TypeError(value)')
-        else
-            throw Error('raise ValueError(name)')
-
-    __delitem__: (name) ->
-        ###
-            Remove a ref.
-
-            :param name: Name of the ref to remove
-        ###
-
-        if name.startswith("refs/") or name == "HEAD"
-            delete @refs[name]
-        else
-            throw Error('raise ValueError(name)')
-
-    _get_user_identity: () ->
-        ###
-            Determine the identity to use for new commits.
-        ###
-
-        config = @get_config_stack()
-        return "%s <%s>".format(config.get(["user", ], "name"), config.get(["user", ], "email"))
-
-    _add_graftpoints: (updated_graftpoints) ->
-        ###
-            Add or modify graftpoints
-
-            :param updated_graftpoints: Dict of commit shas to list of parent shas
-        ###
-
-        # Simple validation
-        for commit, parents in updated_graftpoints.iteritems()
-            for sha in [commit] + parents
-                check_hexsha(sha, 'Invalid graftpoint')
-
-        @_graftpoints.update(updated_graftpoints)
-
-    _remove_graftpoints: (to_remove=[]) ->
-        ###
-            Remove graftpoints
-
-            :param to_remove: List of commit shas
-        ###
-        for sha in to_remove
-            del @_graftpoints[sha]
 
 
     do_commit: (message=null, committer=null,
@@ -546,15 +423,129 @@ class BaseRepository
         return c.id
 
 
+    #####################
+    ## PRIVATE METHODS ##
+    #####################
 
+    _createFileByName: (path, contents) ->
+        ###
+            Write a file to the control dir with the given name and contents.
 
+            :param path: The path to the file, relative to the control dir.
+            :param contents: A string to write to the file.
+        ###
 
+        throw Error("NotImplementedError(self._createFileByName)")
 
+    _get_object: (sha, cls) ->
+        assert len(sha) in [20, 40]
+        ret = self.get_object(sha)
+        if not isinstance(ret, cls)
+            if cls is Commit
+                throw Error(" NotCommitError(ret) ")
+            else if cls is Blob
+                throw Error(" NotBlobError(ret) ")
+            else if cls is Tree
+                throw Error(" NotTreeError(ret) ")
+            else if cls is Tag
+                throw Error(" NotTagError(ret) ")
+            else
+                throw Error(' Exception("Type invalid: %r != %r" % ( ret.type_name, cls.type_name))')
+        return ret
 
+    __getitem__: (name) ->
+        ###
+            Retrieve a Git object by SHA1 or ref.
 
+            :param name: A Git object SHA1 or a ref name
+            :return: A `ShaFile` object, such as a Commit or Blob
+            :raise KeyError: when the specified ref or object does not exist
+        ###
+        if not isinstance(name, str)
+            throw Error('raise TypeError("name must be bytestring, not %.80s" % type(name).__name__)')
 
+        if len(name) in [20, 40]
+            try
+                return self.object_store[name]
+            catch err
+                pass
+        try
+            return @object_store[@refs[name]]
+        catch err
+            throw Error('raise KeyError(name)')
 
+    __contains__: (name) ->
+        ###
+            Check if a specific Git object or ref is present.
 
+            :param name: Git object SHA1 or ref name
+        ###
+
+        if len(name) in [20, 40]
+            return name in @object_store or name in @refs
+        else
+            return name in @refs
+
+    __setitem__: (name, value) ->
+        ###
+            Set a ref.
+
+            :param name: ref name
+            :param value: Ref value - either a ShaFile object, or a hex sha
+        ###
+
+        if name.startswith("refs/") or name == "HEAD"
+            if isinstance(value, ShaFile)
+                @refs[name] = value.id
+            else if isinstance(value, str)
+                @refs[name] = value
+            else
+                throw Error('raise TypeError(value)')
+        else
+            throw Error('raise ValueError(name)')
+
+    __delitem__: (name) ->
+        ###
+            Remove a ref.
+
+            :param name: Name of the ref to remove
+        ###
+
+        if name.startswith("refs/") or name == "HEAD"
+            delete @refs[name]
+        else
+            throw Error('raise ValueError(name)')
+
+    _get_user_identity: () ->
+        ###
+            Determine the identity to use for new commits.
+        ###
+
+        config = @get_config_stack()
+        return "%s <%s>".format(config.get(["user", ], "name"), config.get(["user", ], "email"))
+
+    _add_graftpoints: (updated_graftpoints) ->
+        ###
+            Add or modify graftpoints
+
+            :param updated_graftpoints: Dict of commit shas to list of parent shas
+        ###
+
+        # Simple validation
+        for commit, parents in updated_graftpoints.iteritems()
+            for sha in [commit] + parents
+                check_hexsha(sha, 'Invalid graftpoint')
+
+        @_graftpoints.update(updated_graftpoints)
+
+    _remove_graftpoints: (to_remove=[]) ->
+        ###
+            Remove graftpoints
+
+            :param to_remove: List of commit shas
+        ###
+        for sha in to_remove
+            del @_graftpoints[sha]
 
 
 class Repo extends BaseRepository
@@ -566,6 +557,20 @@ class Repo extends BaseRepository
 
         To create a new repository, use the Repo.init class method.
     ###
+
+    ########################
+    ## PRIVATE PROPERTIES ##
+    ########################
+
+
+    #######################
+    ## PUBLIC PROPERTIES ##
+    #######################
+
+
+    ####################
+    ## PUBLIC METHODS ##
+    ####################
 
     constructor: (root) ->
         if os.path.isdir(os.path.join(root, ".git", PATHS.OBJECTS))
@@ -608,24 +613,11 @@ class Repo extends BaseRepository
         @hooks['commit-msg'] = CommitMsgShellHook(@controldir())
         @hooks['post-commit'] = PostCommitShellHook(@controldir())
 
+
     controldir: () ->
         ### Return the path of the control directory.###
         return @_controldir
 
-    _put_named_file: (path, contents) ->
-        ###
-            Write a file to the control dir with the given name and contents.
-
-            :param path: The path to the file, relative to the control dir.
-            :param contents: A string to write to the file.
-        ###
-
-        path = path.lstrip(os.path.sep)
-        f = GitFile(os.path.join(self.controldir(), path), 'wb')
-        try
-            f.write(contents)
-        finally
-            f.close()
 
     get_named_file: (path) ->
         ###
@@ -649,9 +641,11 @@ class Repo extends BaseRepository
                 return null
 #            raise
 
+
     index_path: () ->
         ### Return path to the index file. ###
         return os.path.join(@controldir(), INDEX_FILENAME)
+
 
     open_index: () ->
         ###
@@ -666,6 +660,7 @@ class Repo extends BaseRepository
         if not @has_index()
             throw Error('NoIndexPresent()')
         return Index(@index_path())
+
 
     has_index: () ->
         ### Check if an index is present. ###
@@ -702,6 +697,7 @@ class Repo extends BaseRepository
                 @object_store.add_object(blob)
                 index[path] = index_entry_from_stat(st, blob.id, 0)
         index.write()
+
 
     clone: (target_path, mkdir=True, bare=False, origin="origin") ->
         ###
@@ -743,11 +739,6 @@ class Repo extends BaseRepository
 
         return target
 
-    _build_tree: () ->
-#        from dulwich.index import build_index_from_tree
-        config = @get_config()
-        honor_filemode = config.get_boolean('core', 'filemode', os.name != "nt")
-        return build_index_from_tree(@path, @index_path(), @object_store, @['HEAD'].tree, honor_filemode=honor_filemode)
 
     get_config: () ->
         ###
@@ -765,6 +756,7 @@ class Repo extends BaseRepository
             ret = ConfigFile()
             ret.path = path
             return ret
+
 
     get_description: () ->
         ###
@@ -784,8 +776,6 @@ class Repo extends BaseRepository
                 throw Error('')
             return null
 
-    __repr__: () ->
-        return "<Repo at %r>".format(@path)
 
     set_description: (description) ->
         ###
@@ -801,6 +791,7 @@ class Repo extends BaseRepository
         finally
             f.close()
 
+
     @_init_maybe_bare: (path, bare) ->
         for d in BASE_DIRECTORIES
             os.mkdir(os.path.join(path, d))
@@ -811,7 +802,8 @@ class Repo extends BaseRepository
 
         return ret
 
-    @init: (path, mkdir=False) ->
+
+    @init: (path, mkdir=false) ->
         ###
             Create a new repository.
 
@@ -828,6 +820,7 @@ class Repo extends BaseRepository
 
         return new Repo(path)
 
+
     @init_bare: (path) ->
         ###
             Create a new bare repository.
@@ -840,7 +833,38 @@ class Repo extends BaseRepository
 
         return Repo._init_maybe_bare(path, true)
 
+
     @create: Repo.init_bare
+
+
+    #####################
+    ## PRIVATE METHODS ##
+    #####################
+
+    _put_named_file: (path, contents) ->
+        ###
+            Write a file to the control dir with the given name and contents.
+
+            :param path: The path to the file, relative to the control dir.
+            :param contents: A string to write to the file.
+        ###
+
+        path = path.lstrip(os.path.sep)
+        f = GitFile(os.path.join(self.controldir(), path), 'wb')
+        try
+            f.write(contents)
+        finally
+            f.close()
+
+    _build_tree: () ->
+#        from dulwich.index import build_index_from_tree
+        config = @get_config()
+        honor_filemode = config.get_boolean('core', 'filemode', os.name != "nt")
+        return build_index_from_tree(@path, @index_path(), @object_store, @['HEAD'].tree, honor_filemode=honor_filemode)
+
+
+    __repr__: () ->
+        return "<Repo at %r>".format(@path)
 
 
 class MemoryRepo extends BaseRepository
@@ -851,6 +875,20 @@ class MemoryRepo extends BaseRepository
         those have a stronger dependency on the filesystem.
     ###
 
+    ########################
+    ## PRIVATE PROPERTIES ##
+    ########################
+
+
+    #######################
+    ## PUBLIC PROPERTIES ##
+    #######################
+
+
+    ####################
+    ## PUBLIC METHODS ##
+    ####################
+
     constructor:() ->
 #        from dulwich.config import ConfigFile
         super(MemoryObjectStore(), DictRefsContainer(new Object()))
@@ -858,15 +896,6 @@ class MemoryRepo extends BaseRepository
         @bare = true
         @_config = new ConfigFile()
 
-    _put_named_file: (path, contents) ->
-        ###
-            Write a file to the control dir with the given name and contents.
-
-            :param path: The path to the file, relative to the control dir.
-            :param contents: A string to write to the file.
-        ###
-
-        @_named_files[path] = contents
 
     get_named_file: (path) ->
         ###
@@ -885,6 +914,7 @@ class MemoryRepo extends BaseRepository
             return null
         return new BytesIO(contents)
 
+
     open_index: () ->
         ###
             Fail to open index for this repo, since it is bare.
@@ -892,6 +922,7 @@ class MemoryRepo extends BaseRepository
             :raise NoIndexPresent: Raised when no index is present
         ###
         throw Error('NoIndexPresent()')
+
 
     get_config: () ->
         ###
@@ -901,22 +932,25 @@ class MemoryRepo extends BaseRepository
         ###
         return @_config
 
+
     get_description: () ->
         ###
             Retrieve the repository description.
 
             This defaults to None, for no description.
         ###
-        return None
+        return false
+
 
     @init_bare: (objects, refs) ->
-        """Create a new bare repository in memory.
+        ###
+            Create a new bare repository in memory.
 
-        :param objects: Objects for the new repository,
-            as iterable
-        :param refs: Refs as dictionary, mapping names
-            to object SHA1s
-        """
+            :param objects: Objects for the new repository,
+                as iterable
+            :param refs: Refs as dictionary, mapping names
+                to object SHA1s
+        ###
         ret = new MemoryRepo()
         for obj in objects
             ret.object_store.add_object(obj)
@@ -924,3 +958,18 @@ class MemoryRepo extends BaseRepository
             ret.refs[refname] = sha
         ret._init_files(bare=True)
         return ret
+
+
+    #####################
+    ## PRIVATE METHODS ##
+    #####################
+
+    _put_named_file: (path, contents) ->
+        ###
+            Write a file to the control dir with the given name and contents.
+
+            :param path: The path to the file, relative to the control dir.
+            :param contents: A string to write to the file.
+        ###
+
+        @_named_files[path] = contents
