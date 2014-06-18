@@ -37,6 +37,8 @@ class PathHelper
     ## PUBLIC PROPERTIES ##
     #######################
 
+    path_separator: ''
+
 
     ####################
     ## PUBLIC METHODS ##
@@ -45,6 +47,16 @@ class PathHelper
     constructor: () ->
         ###
         ###
+
+        @path_separator = '/'
+    
+        
+    join: (path1, path2) ->
+        ###
+        ###
+
+        return "#{path1}#{@path_separator}#{path2}"
+
 
 
     #####################
