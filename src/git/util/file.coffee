@@ -18,6 +18,34 @@ class AbstractFileSystem
         ###
         ###
 
+        @path = new PathHelper()
+
+
+    #####################
+    ## PRIVATE METHODS ##
+    #####################
+
+
+class PathHelper
+
+    ########################
+    ## PRIVATE PROPERTIES ##
+    ########################
+
+
+    #######################
+    ## PUBLIC PROPERTIES ##
+    #######################
+
+
+    ####################
+    ## PUBLIC METHODS ##
+    ####################
+
+    constructor: () ->
+        ###
+        ###
+
 
     #####################
     ## PRIVATE METHODS ##
@@ -49,6 +77,8 @@ class MemoryFileSystem extends AbstractFileSystem
     constructor: () ->
         ###
         ###
+
+        super
 
         @_all_paths = new Object()
         @_temporary_paths = new Object()
