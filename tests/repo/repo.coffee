@@ -57,8 +57,6 @@ describe('CreateRepositoryTests', () ->
     beforeEach(
         () ->
             set_file_system('memory')
-            os.mkdir('test')
-            os.setRoot('test')
     )
 
     afterEach(

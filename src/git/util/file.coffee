@@ -30,6 +30,11 @@ class MemoryFileSystem extends AbstractFileSystem
     ## PRIVATE PROPERTIES ##
     ########################
 
+    _root_path: null
+    _current_path: null
+
+    _all_paths: null
+
 
     #######################
     ## PUBLIC PROPERTIES ##
@@ -43,6 +48,36 @@ class MemoryFileSystem extends AbstractFileSystem
     constructor: () ->
         ###
         ###
+
+        @_all_paths = new Object()
+
+
+    mkdir: (directory_name) ->
+        ###
+        ###
+
+        if @_current_path?
+            current_path_str = @_current_path.path()
+        else
+            current_path_str = @_root_path.path()
+
+        directory_path = current_path_str + directory_name
+
+        directory = new DirectoryHandler(directory_path)
+        @_all_paths[directory_path] = directory
+
+        return directory
+
+
+    setRoot: (directory) ->
+        ###
+        ###
+
+        if isObject(directory)
+            @_root_path = directory
+        else
+            directory_obj = @mkdir(directory)
+            @setRoot(directory_obj)
 
 
     #####################
@@ -71,6 +106,32 @@ class FileHandler
     ####################
 
     constructor: () ->
+        ###
+        ###
+
+
+    #####################
+    ## PRIVATE METHODS ##
+    #####################
+
+
+class DirectoryHandler
+
+    ########################
+    ## PRIVATE PROPERTIES ##
+    ########################
+
+
+    #######################
+    ## PUBLIC PROPERTIES ##
+    #######################
+
+
+    ####################
+    ## PUBLIC METHODS ##
+    ####################
+
+    constructor: (@_path) ->
         ###
         ###
 
