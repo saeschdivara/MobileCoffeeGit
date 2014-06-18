@@ -73,7 +73,7 @@ describe('CreateRepositoryTests', () ->
         ## VARIABLES ##
         ###############
 
-        tmp_dir = Tempfile.mkdtemp()
+        tmp_dir = os.mkdtemp()
 
 
         #######################

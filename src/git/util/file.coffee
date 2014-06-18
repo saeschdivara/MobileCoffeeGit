@@ -34,6 +34,7 @@ class MemoryFileSystem extends AbstractFileSystem
     _current_path: null
 
     _all_paths: null
+    _temporary_paths: null
 
 
     #######################
@@ -50,6 +51,7 @@ class MemoryFileSystem extends AbstractFileSystem
         ###
 
         @_all_paths = new Object()
+        @_temporary_paths = new Object()
 
 
     mkdir: (directory_name) ->
@@ -58,8 +60,10 @@ class MemoryFileSystem extends AbstractFileSystem
 
         if @_current_path?
             current_path_str = @_current_path.path()
-        else
+        else if @_root_path?
             current_path_str = @_root_path.path()
+        else
+            current_path_str = '/'
 
         directory_path = current_path_str + directory_name
 
@@ -67,6 +71,14 @@ class MemoryFileSystem extends AbstractFileSystem
         @_all_paths[directory_path] = directory
 
         return directory
+
+    mkdtemp: () ->
+        ###
+        ###
+
+        temp_name = getRandomHexString() + '.tmp'
+        temp_directory = @mkdir(temp_name)
+        @_temporary_paths[temp_directory.path()] = temp_directory
 
 
     setRoot: (directory) ->
@@ -134,6 +146,13 @@ class DirectoryHandler
     constructor: (@_path) ->
         ###
         ###
+
+
+    path: () ->
+        ###
+        ###
+
+        return @_path
 
 
     #####################
