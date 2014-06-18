@@ -78,3 +78,18 @@ class FileHandler
     #####################
     ## PRIVATE METHODS ##
     #####################
+
+
+################################################################
+# FILE SYSTEM CHOOSING
+################################################################
+
+# By default os is null
+os = null
+
+set_file_system = (cls_string) ->
+    ###
+    ###
+
+    switch
+        when cls_string is 'memory' then os = new MemoryFileSystem()
