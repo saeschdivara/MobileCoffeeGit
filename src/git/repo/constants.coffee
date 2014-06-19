@@ -9,8 +9,12 @@ PATHS =
         HEADS: 'heads'
     INDEX: 'index'
     BRANCHES: 'branches'
+    PACK: 'pack'
     HOOKS: 'hooks'
     INFO: 'info'
+
+OBJECTDIR = PATHS.OBJECTS
+PACKDIR = PATHS.PACK
 
 BASE_DIRECTORIES = [
     [PATHS.BRANCHES],
