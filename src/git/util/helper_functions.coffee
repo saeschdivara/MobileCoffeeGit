@@ -17,11 +17,12 @@ isArray = () ->
     return false
 
 
-isinstance = () ->
+isinstance = (obj, cls) ->
     ###
     ###
 
-    return false
+
+    return obj instanceof cls
 
 
 len = () ->
