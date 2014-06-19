@@ -51,25 +51,40 @@ class PathHelper
         @path_separator = '/'
     
         
-    join: (path1, path2) ->
+    join: () ->
         ###
         ###
 
-        return "#{path1}#{@path_separator}#{path2}"
+        path = ''
+
+        for arg in arguments
+
+            if @isdir(arg)
+                arg = arg.path()
+
+            path += arg + @path_separator
+
+        return path
 
 
-    isfile: (path) ->
+    isfile: (file) ->
         ###
         ###
 
-        return os.file(path) instanceof FileHandler
+        if not isObject(file)
+            file = os.file(file)
+
+        return file instanceof FileHandler
 
 
-    isdir: (path) ->
+    isdir: (dir) ->
         ###
         ###
 
-        return os.file(path) instanceof DirectoryHandler
+        if not isObject(dir)
+            dir = os.file(dir)
+
+        return dir instanceof DirectoryHandler
 
 
 
