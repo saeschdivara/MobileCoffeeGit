@@ -85,7 +85,6 @@ describe('CreateRepositoryTests', () ->
         ## TEST START ##
         ################
 
-
         repo = Repo.init_bare(tmp_dir)
 
         expect(repo._controldir).toBe(tmp_dir)
