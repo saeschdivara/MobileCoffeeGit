@@ -142,9 +142,8 @@ class MemoryFileSystem extends AbstractFileSystem
 
         if not directory_name.startsWith('/')
             directory_path = current_path_str + directory_name
-
         else
-            console.log(directory_name)
+            directory_path = directory_name
 
         directory = new DirectoryHandler(directory_path)
         @_all_paths[directory_path] = directory
