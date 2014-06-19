@@ -628,7 +628,7 @@ class DiskObjectStore extends PackBasedObjectStore
         finally
             f.close()
 
-    @init: (cls, path) ->
+    @init: (path) ->
         try
             os.mkdir(path)
         catch e
@@ -636,7 +636,7 @@ class DiskObjectStore extends PackBasedObjectStore
                 throw Error('')
         os.mkdir(os.path.join(path, "info"))
         os.mkdir(os.path.join(path, PACKDIR))
-        return new cls(path)
+        return new DiskObjectStore(path)
 
 
 class MemoryObjectStore extends BaseObjectStore
