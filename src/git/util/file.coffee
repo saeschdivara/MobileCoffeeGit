@@ -58,6 +58,20 @@ class PathHelper
         return "#{path1}#{@path_separator}#{path2}"
 
 
+    isfile: (path) ->
+        ###
+        ###
+
+        return os.file(path) instanceof FileHandler
+
+
+    isdir: (path) ->
+        ###
+        ###
+
+        return os.file(path) instanceof DirectoryHandler
+
+
 
     #####################
     ## PRIVATE METHODS ##
@@ -114,6 +128,7 @@ class MemoryFileSystem extends AbstractFileSystem
 
         return directory
 
+
     mkdtemp: () ->
         ###
         ###
@@ -121,6 +136,13 @@ class MemoryFileSystem extends AbstractFileSystem
         temp_name = getRandomHexString() + '.tmp'
         temp_directory = @mkdir(temp_name)
         @_temporary_paths[temp_directory.path()] = temp_directory
+
+
+    file: (path) ->
+        ###
+        ###
+
+        return @_all_paths[path]
 
 
     setRoot: (directory) ->
