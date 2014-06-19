@@ -573,12 +573,13 @@ class Repo extends BaseRepository
     ####################
 
     constructor: (root) ->
-        if os.path.isdir(os.path.join(root, ".git", PATHS.OBJECTS))
+
+        if os.path.isdir(os.path.join(root, ".git", OBJECTDIR))
             @bare = false
             @_controldir = os.path.join(root, ".git")
         else if (os.path.isdir(os.path.join(root, OBJECTDIR)) and
               os.path.isdir(os.path.join(root, REFSDIR)))
-            @bare = True
+            @bare = true
             @_controldir = root
         else if (os.path.isfile(os.path.join(root, ".git")))
             # import re
@@ -587,16 +588,16 @@ class Repo extends BaseRepository
 #                _, path = re.match('(gitdir: )(.+$)', f.read()).groups()
             finally
                 f.close()
-            @bare = False
+            @bare = false
             @_controldir = os.path.join(root, path)
         else
-            throw Error('''
+            throw Error("""
             raise NotGitRepository(
-                "No git repository was found at %(path)s" % dict(path=root)
-            ) ''')
+                "No git repository was found at #{root}"
+            ) """)
 
         @path = root
-        object_store = DiskObjectStore(os.path.join(@controldir(),
+        object_store = new DiskObjectStore(os.path.join(@controldir(),
                                                     OBJECTDIR))
         refs = DiskRefsContainer(@controldir())
         super(object_store, refs)
@@ -794,7 +795,9 @@ class Repo extends BaseRepository
 
     @_init_maybe_bare: (path, bare) ->
         for d in BASE_DIRECTORIES
-            os.mkdir(os.path.join(path, d))
+            joined_path = os.path.join(path, d)
+            os.mkdir(joined_path)
+
         DiskObjectStore.init(os.path.join(path, OBJECTDIR))
         ret = new Repo(path)
         ret.refs.set_symbolic_ref("HEAD", "refs/heads/master")
