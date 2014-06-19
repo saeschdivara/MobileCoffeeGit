@@ -59,8 +59,12 @@ class PathHelper
 
         for arg in arguments
 
+            # Check if it is a directory
             if @isdir(arg)
-                arg = arg.path()
+                # Check if it is an object
+                if isObject(arg)
+                    arg = arg.path()
+
             else if isObject(arg) and arg.hasOwnProperty('length')
                 arg = PathHelper.prototype.join.apply(@, arg)
 
