@@ -353,7 +353,7 @@ class DiskObjectStore extends PackBasedObjectStore
         ###
         super
         @path = path
-        @pack_dir = os.path.join(self.path, PACKDIR)
+        @pack_dir = os.path.join(@path, PACKDIR)
         @_pack_cache_time = 0
         @_pack_cache = {}
         @_alternates =null
