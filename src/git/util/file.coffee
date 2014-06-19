@@ -61,8 +61,12 @@ class PathHelper
 
             if @isdir(arg)
                 arg = arg.path()
+            else if isObject(arg) and arg.hasOwnProperty('length')
+                arg = PathHelper.prototype.join.apply(@, arg)
 
             path += arg + @path_separator
+            # If arg had already a / at the end
+            path = path.replace('//', '/')
 
         return path
 
@@ -136,7 +140,11 @@ class MemoryFileSystem extends AbstractFileSystem
         else
             current_path_str = '/'
 
-        directory_path = current_path_str + directory_name
+        if not directory_name.startsWith('/')
+            directory_path = current_path_str + directory_name
+
+        else
+            console.log(directory_name)
 
         directory = new DirectoryHandler(directory_path)
         @_all_paths[directory_path] = directory
