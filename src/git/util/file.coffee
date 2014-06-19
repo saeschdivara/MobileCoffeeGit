@@ -260,3 +260,10 @@ set_file_system = (cls_string) ->
 
     switch
         when cls_string is 'memory' then os = new MemoryFileSystem()
+
+
+clear_file_system = () ->
+    ###
+    ###
+
+    # For now do nothing
