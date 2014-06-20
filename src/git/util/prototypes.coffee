@@ -63,3 +63,24 @@ if not String.prototype.startsWith
         String.prototype.startsWith = startsWith
 
 
+String.prototype.lstrip = (chars) ->
+    ###
+        Return a copy of the string with leading characters removed.
+
+        :type chars: string | null
+        :rtype: str
+    ###
+
+    # Check if it is null or undefined
+    if not chars?
+        return null
+
+    # Check if chars is too long
+    if chars.length > @.length
+        return null
+
+    # Check if chars are really at the end
+    if @.substr(@.length - chars.length, chars.length) != chars
+        return null
+
+    return @.substring(0, @.length - chars.length)
