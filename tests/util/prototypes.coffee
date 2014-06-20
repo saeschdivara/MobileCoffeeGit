@@ -14,6 +14,8 @@ describe('Prototypes', () ->
         ## VARIABLES ##
         ###############
 
+        test_path_string = '/tff/fff/lll//'
+
 
         #######################
         ## TEST PREPARATIONS ##
@@ -23,5 +25,9 @@ describe('Prototypes', () ->
         ################
         ## TEST START ##
         ################
+
+        new_string = test_path_string.lstrip("//")
+
+        expect(new_string).toBe('/tff/fff/lll')
     )
 )
