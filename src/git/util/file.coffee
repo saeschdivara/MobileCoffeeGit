@@ -38,6 +38,7 @@ class PathHelper
     #######################
 
     path_separator: ''
+    sep: ''
 
 
     ####################
@@ -49,6 +50,7 @@ class PathHelper
         ###
 
         @path_separator = '/'
+        @sep = @path_separator
     
         
     join: () ->
