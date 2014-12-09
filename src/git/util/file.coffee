@@ -199,6 +199,9 @@ class FileHandler
     ## PRIVATE PROPERTIES ##
     ########################
 
+    _is_open: false
+    _open_mode: 0
+
 
     #######################
     ## PUBLIC PROPERTIES ##
@@ -212,6 +215,13 @@ class FileHandler
     constructor: () ->
         ###
         ###
+
+
+    open: (mode) ->
+        ###
+        ###
+
+        #
 
 
     #####################
@@ -250,6 +260,24 @@ class DirectoryHandler
     #####################
     ## PRIVATE METHODS ##
     #####################
+
+
+################################################################
+# FILE SYSTEM GLOBAL FUNCTIONS
+################################################################
+
+open = (name, mode=null, buffering=null) ->
+    ###
+        open(name[, mode[, buffering]]) -> file object
+
+        Open a file using the file() type, returns a file object.  This is the
+        preferred way to open a file.  See file.__doc__ for further information.
+    ###
+
+    file = new FileHandler()
+    file.open(mode)
+
+    return file
 
 
 ################################################################

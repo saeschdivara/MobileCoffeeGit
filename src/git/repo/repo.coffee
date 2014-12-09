@@ -636,7 +636,7 @@ class Repo extends BaseRepository
         # the dumb web serving code.
         path = path.lstrip(os.path.sep)
         try
-            return open(os.path.join(self.controldir(), path), 'rb')
+            return open(os.path.join(@controldir(), path), 'rb')
         catch e
             if e.errno == errno.ENOENT
                 return null
